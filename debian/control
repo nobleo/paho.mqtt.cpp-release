@@ -1,0 +1,12 @@
+Source: ros-noetic-paho-mqtt-cpp
+Section: misc
+Priority: optional
+Maintainer:  <paho-success@eclipse.org>
+Build-Depends: debhelper (>= 9.0.0), cmake, libssl-dev, ros-noetic-paho-mqtt-c
+Homepage: https://github.com/eclipse/paho.mqtt.cpp.git
+Standards-Version: 3.9.2
+
+Package: ros-noetic-paho-mqtt-cpp
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libssl-dev, ros-noetic-paho-mqtt-c
+Description: Eclipse Paho MQTT C++ Client Library
