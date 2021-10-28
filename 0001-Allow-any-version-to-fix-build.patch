@@ -1,0 +1,25 @@
+From 8813b39a20b744bac442b2d0e19b176b63da1c78 Mon Sep 17 00:00:00 2001
+From: Tim Clephas <tim.clephas@nobleo.nl>
+Date: Thu, 28 Oct 2021 14:41:42 +0200
+Subject: [PATCH] Allow any version to fix build
+
+---
+ cmake/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
+index a9f8908..e7f84c2 100644
+--- a/cmake/CMakeLists.txt
++++ b/cmake/CMakeLists.txt
+@@ -5,7 +5,7 @@ include(CMakePackageConfigHelpers)
+ write_basic_package_version_file(
+     "${CMAKE_CURRENT_BINARY_DIR}/${package_name}ConfigVersion.cmake"
+     VERSION ${PROJECT_VERSION}
+-    COMPATIBILITY SameMajorVersion) # TODO
++    COMPATIBILITY AnyNewerVersion) # TODO
+ 
+ export(EXPORT ${package_name}
+     FILE "${CMAKE_CURRENT_BINARY_DIR}/${package_name}Targets.cmake"
+-- 
+2.25.1
+
