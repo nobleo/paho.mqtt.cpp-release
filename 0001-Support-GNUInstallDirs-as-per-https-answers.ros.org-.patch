@@ -1,0 +1,26 @@
+From 2807d5c899e698d19a715c0ece53ad8600a23700 Mon Sep 17 00:00:00 2001
+From: Tim Clephas <tim.clephas@nobleo.nl>
+Date: Sat, 6 Nov 2021 11:16:16 +0100
+Subject: [PATCH] Support GNUInstallDirs as per
+ https://answers.ros.org/question/389836/buildfarm-dpkg-shlibdeps-error-cannot-find-library/?answer=390167#post-id-390167
+
+---
+ debian/rules.em | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/rules.em b/debian/rules.em
+index 3342408..4ce1370 100755
+--- a/debian/rules.em
++++ b/debian/rules.em
+@@ -53,7 +53,7 @@ override_dh_shlibdeps:
+ 	# in the install tree and source it.  It will set things like
+ 	# CMAKE_PREFIX_PATH, PKG_CONFIG_PATH, and PYTHONPATH.
+ 	if [ -f "@(InstallationPrefix)/setup.sh" ]; then . "@(InstallationPrefix)/setup.sh"; fi && \
+-	dh_shlibdeps -l$(CURDIR)/debian/@(Package)/@(InstallationPrefix)/lib/:$(CURDIR)/debian/@(Package)/@(InstallationPrefix)/lib/${DEB_HOST_MULTIARCH}
++    dh_shlibdeps -l$(CURDIR)/debian/@(Package)/@(InstallationPrefix)/lib/:$(CURDIR)/debian/@(Package)/@(InstallationPrefix)/lib/$(shell dpkg-architecture -qDEB_HOST_MULTIARCH)/:@(InstallationPrefix)/lib/:@(InstallationPrefix)/lib/$(shell dpkg-architecture -qDEB_HOST_MULTIARCH)/
+ 
+ override_dh_auto_install:
+ 	# In case we're installing to a non-standard location, look for a setup.sh
+-- 
+2.25.1
+
