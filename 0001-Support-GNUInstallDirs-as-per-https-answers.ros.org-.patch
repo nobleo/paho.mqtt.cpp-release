@@ -1,4 +1,4 @@
-From 2807d5c899e698d19a715c0ece53ad8600a23700 Mon Sep 17 00:00:00 2001
+From cca17030b78d78c1a5fc8d854c404f4ad65e8485 Mon Sep 17 00:00:00 2001
 From: Tim Clephas <tim.clephas@nobleo.nl>
 Date: Sat, 6 Nov 2021 11:16:16 +0100
 Subject: [PATCH] Support GNUInstallDirs as per
