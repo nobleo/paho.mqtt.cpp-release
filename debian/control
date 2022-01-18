@@ -1,0 +1,12 @@
+Source: ros-galactic-paho-mqtt-cpp
+Section: misc
+Priority: optional
+Maintainer: Tim Clephas <tim.clephas@nobleo.nl>
+Build-Depends: debhelper (>= 9.0.0), cmake, libssl-dev, ros-galactic-paho-mqtt-c, ros-galactic-ros-workspace
+Homepage: https://github.com/eclipse/paho.mqtt.cpp.git
+Standards-Version: 3.9.2
+
+Package: ros-galactic-paho-mqtt-cpp
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libssl-dev, ros-galactic-paho-mqtt-c, ros-galactic-ros-workspace
+Description: Eclipse Paho MQTT C++ Client Library
