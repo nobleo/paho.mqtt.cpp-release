@@ -1,3 +1,26 @@
+## paho-mqtt-cpp (noetic) - 1.3.1-1
+
+The packages in the `paho-mqtt-cpp` repository were released into the `noetic` distro by running `/usr/bin/bloom-release paho-mqtt-cpp --ros-distro noetic` on `Fri, 24 Nov 2023 14:41:49 -0000`
+
+The `paho-mqtt-cpp` package was released.
+
+Version of package(s) in repository `paho-mqtt-cpp`:
+
+- upstream repository: https://github.com/eclipse/paho.mqtt.cpp.git
+- release repository: https://github.com/nobleo/paho.mqtt.cpp-release.git
+- rosdistro version: `1.2.0-4`
+- old version: `1.2.0-4`
+- new version: `1.3.1-1`
+
+Versions of tools used:
+
+- bloom version: `0.11.2`
+- catkin_pkg version: `1.0.0`
+- rosdep version: `0.22.2`
+- rosdistro version: `0.9.0`
+- vcstools version: `0.1.42`
+
+
 ## paho-mqtt-cpp (galactic) - 1.2.0-1
 
 The packages in the `paho-mqtt-cpp` repository were released into the `galactic` distro by running `/usr/bin/bloom-release paho-mqtt-cpp --rosdistro galactic` on `Tue, 18 Jan 2022 12:49:37 -0000`
