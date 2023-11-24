@@ -1,4 +1,4 @@
-From cca17030b78d78c1a5fc8d854c404f4ad65e8485 Mon Sep 17 00:00:00 2001
+From 677af493deb44808322ce301782528b3baa4ed3e Mon Sep 17 00:00:00 2001
 From: Tim Clephas <tim.clephas@nobleo.nl>
 Date: Sat, 6 Nov 2021 11:16:16 +0100
 Subject: [PATCH] Support GNUInstallDirs as per
@@ -22,5 +22,5 @@ index 3342408..4ce1370 100755
  override_dh_auto_install:
  	# In case we're installing to a non-standard location, look for a setup.sh
 -- 
-2.25.1
+2.43.0
 
