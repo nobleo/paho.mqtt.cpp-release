@@ -7,27 +7,51 @@
 namespace mqtt {
 
 /////////////////////////////////////////////////////////////////////////////
+// disconnect_options
 
-const MQTTAsync_disconnectOptions disconnect_options::DFLT_C_STRUCT = MQTTAsync_disconnectOptions_initializer;
+const MQTTAsync_disconnectOptions disconnect_options::DFLT_C_STRUCT
+		= MQTTAsync_disconnectOptions_initializer;
 
-disconnect_options::disconnect_options() : opts_(DFLT_C_STRUCT)
-{
+const MQTTAsync_disconnectOptions disconnect_options::DFLT_C_STRUCT5
+		= MQTTAsync_disconnectOptions_initializer5;
+
+disconnect_options::disconnect_options() : opts_{DFLT_C_STRUCT} {
 }
 
 disconnect_options::disconnect_options(const disconnect_options& opt)
-			: opts_(opt.opts_), tok_(opt.tok_)
+			: opts_(opt.opts_), tok_(opt.tok_), props_(opt.props_)
 {
+	update_c_struct();
 }
 
 disconnect_options::disconnect_options(disconnect_options&& opt)
-			: opts_(opt.opts_), tok_(std::move(opt.tok_))
+			: opts_(opt.opts_), tok_(std::move(opt.tok_)), props_(std::move(opt.props_))
 {
+	update_c_struct();
+}
+
+disconnect_options disconnect_options::v3()
+{
+	return disconnect_options { DFLT_C_STRUCT };
+}
+
+disconnect_options disconnect_options::v5()
+{
+	return disconnect_options { DFLT_C_STRUCT5 };
+}
+
+void disconnect_options::update_c_struct()
+{
+	opts_.properties = props_.c_struct();
+	opts_.context = tok_.get();
 }
 
 disconnect_options& disconnect_options::operator=(const disconnect_options& opt)
 {
 	opts_ = opt.opts_;
 	tok_ = opt.tok_;
+	props_ = opt.props_;
+	update_c_struct();
 	return *this;
 }
 
@@ -35,6 +59,8 @@ disconnect_options& disconnect_options::operator=(disconnect_options&& opt)
 {
 	opts_ = opt.opts_;
 	tok_ = std::move(opt.tok_);
+	props_ = std::move(opt.props_);
+	update_c_struct();
 	return *this;
 }
 
@@ -59,6 +85,19 @@ void disconnect_options::set_token(const token_ptr& tok, int mqttVersion)
 			opts_.onFailure = &token::on_failure;
 		}
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// disconnect_options_builder
+
+disconnect_options_builder disconnect_options_builder::v3()
+{
+	return disconnect_options_builder{disconnect_options::DFLT_C_STRUCT};
+}
+
+disconnect_options_builder disconnect_options_builder::v5()
+{
+	return disconnect_options_builder{disconnect_options::DFLT_C_STRUCT5};
 }
 
 /////////////////////////////////////////////////////////////////////////////

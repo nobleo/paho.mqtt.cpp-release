@@ -7,14 +7,14 @@
 
 #*******************************************************************************
 # Copyright (c) 2016-2017, Guilherme Maciel Ferreira
-# Copyright (c) 2017-2018, Frank Pagliughi
+# Copyright (c) 2017-2023, Frank Pagliughi
 #
 #  All rights reserved. This program and the accompanying materials
-#  are made available under the terms of the Eclipse Public License v1.0
+#  are made available under the terms of the Eclipse Public License v2.0
 #  and Eclipse Distribution License v1.0 which accompany this distribution. 
 # 
 #  The Eclipse Public License is available at 
-#     http://www.eclipse.org/legal/epl-v10.html
+#     http://www.eclipse.org/legal/epl-v20.html
 #  and the Eclipse Distribution License is available at 
 #    http://www.eclipse.org/org/documents/edl-v10.php.
 # 
@@ -23,21 +23,30 @@
 #     Frank Pagliughi - made the shared library optional
 #*******************************************************************************/
 
-find_package(PahoMqttC REQUIRED)
+# --- Find the Paho C library ---
+
+if (NOT TARGET PahoMqttC::PahoMqttC)
+    find_package(PahoMqttC REQUIRED)
+endif()
+
+if(PAHO_WITH_MQTT_C)
+    message(STATUS "Paho C: Bundled")
+else()
+    message(STATUS "Paho C Headers: ${PAHO_MQTT_C_INCLUDE_DIRS}")
+    message(STATUS "Paho C Library: ${PAHO_MQTT_C_LIBRARIES}")
+endif()
 
 # --- The headers ---
 
 add_subdirectory(mqtt)
 
+include(GenerateExportHeader)
+#generate_export_header(mylibrary)
+
 ## --- Library dependencies ---
 
 set (THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-
-#set(LIBS_SYSTEM Threads::Threads)
-#if(WIN32)
-#    string(APPEND LIBS_SYSTEM " ws2_32")
-#endif()
 
 ## --- Use object library to optimize compilation ---
 
@@ -69,14 +78,24 @@ add_library(paho-cpp-objs OBJECT
 #target_include_directories(OBJS PRIVATE ${PAHO_MQTT_C_INCLUDE_DIRS})
 
 target_include_directories(paho-cpp-objs 
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:include>
-    PRIVATE 
-        ${PAHO_MQTT_C_INCLUDE_DIRS}
-        src
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  PRIVATE 
+    ${PAHO_MQTT_C_INCLUDE_DIRS}
+    src
 )
 
+target_compile_definitions(paho-cpp-objs PRIVATE PAHO_MQTTPP_EXPORTS)
+
+# --- Warnings ---
+
+# Maybe set '-Werror' for Release builds?
+target_compile_options(paho-cpp-objs PRIVATE
+  $<$<CXX_COMPILER_ID:MSVC>:/W3>
+  $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wdocumentation>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC,Clang>>:-Wall -Wextra>
+)
 
 ## --- Build the shared library, if requested ---
 
@@ -89,7 +108,7 @@ if(PAHO_BUILD_SHARED)
         PRIVATE ${LIBS_SYSTEM}
         PUBLIC PahoMqttC::PahoMqttC Threads::Threads)
 
-    # It would be nice to exort the include paths from the obj lib, but we
+    # It would be nice to export the include paths from the obj lib, but we
     # get an export error. Perhaps in a future version?
     # 
     # CMake Error: install(EXPORT "PahoMqttCpp" ...) includes target "paho-mqttpp3"
@@ -129,6 +148,7 @@ if(PAHO_BUILD_STATIC)
 
     target_include_directories(paho-mqttpp3-static PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         $<INSTALL_INTERFACE:include>
     )
 
@@ -137,7 +157,7 @@ if(PAHO_BUILD_STATIC)
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-    ## Let the archive use the same name as the shared lib on *nix systems
+    ## Let the archive use the same base name as the shared lib on *nix systems
     if(UNIX)
         set_target_properties(paho-mqttpp3-static PROPERTIES OUTPUT_NAME paho-mqttpp3)
     endif()

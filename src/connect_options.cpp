@@ -1,15 +1,15 @@
 // connect_options.cpp
 
 /*******************************************************************************
- * Copyright (c) 2017-2020 Frank Pagliughi <fpagliughi@mindspring.com>
+ * Copyright (c) 2017-2023 Frank Pagliughi <fpagliughi@mindspring.com>
  * Copyright (c) 2016 Guilherme M. Ferreira <guilherme.maciel.ferreira@gmail.com>
  *
  * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * are made available under the terms of the Eclipse Public License v2.0
  * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
  * The Eclipse Public License is available at
- *    http://www.eclipse.org/legal/epl-v10.html
+ *    http://www.eclipse.org/legal/epl-v20.html
  * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
@@ -25,15 +25,30 @@ namespace mqtt {
 
 /////////////////////////////////////////////////////////////////////////////
 
-const MQTTAsync_connectOptions connect_options::DFLT_C_STRUCT =
+PAHO_MQTTPP_EXPORT const MQTTAsync_connectOptions connect_options::DFLT_C_STRUCT =
 		MQTTAsync_connectOptions_initializer;
 
-connect_options::connect_options() : opts_(DFLT_C_STRUCT)
+PAHO_MQTTPP_EXPORT const MQTTAsync_connectOptions connect_options::DFLT_C_STRUCT5 =
+		MQTTAsync_connectOptions_initializer5;
+
+PAHO_MQTTPP_EXPORT const MQTTAsync_connectOptions connect_options::DFLT_C_STRUCT_WS =
+		MQTTAsync_connectOptions_initializer_ws;
+
+PAHO_MQTTPP_EXPORT const MQTTAsync_connectOptions connect_options::DFLT_C_STRUCT5_WS =
+		MQTTAsync_connectOptions_initializer5_ws;
+
+// --------------------------------------------------------------------------
+
+connect_options::connect_options(int ver /*=MQTTVERSION_DEFAULT*/)
 {
+	opts_ = (ver < MQTTVERSION_5) ? DFLT_C_STRUCT : DFLT_C_STRUCT5;
 }
 
-connect_options::connect_options(string_ref userName, binary_ref password)
-		: connect_options()
+connect_options::connect_options(
+	string_ref userName, binary_ref password,
+	int ver /*=MQTTVERSION_DEFAULT*/
+)
+		: connect_options(ver)
 {
 	set_user_name(userName);
 	set_password(password);
@@ -78,12 +93,22 @@ connect_options::connect_options(connect_options&& opt) : opts_(opt.opts_),
 
 	if (opts_.ssl)
 		opts_.ssl = &ssl_.opts_;
-
+	
 	update_c_struct();
 }
 
+connect_options connect_options::v3()
+{
+	return connect_options(DFLT_C_STRUCT);
+}
+
+connect_options connect_options::v5()
+{
+	return connect_options(DFLT_C_STRUCT5);
+}
+
 // Unfortunately, with the existing implementation, there's no way to know
-// if the will and ssl options were set by looking at the C++ structs.
+// if the (connect) properties, will and ssl options were set by looking at the C++ structs.
 // In a major update, we can consider using a pointer or optional<> to
 // indicate that they were set.
 // But, for now, the copy and assignment operations must handle it manually
@@ -133,6 +158,11 @@ void connect_options::update_c_struct()
 		opts_.serverURIs = serverURIs_->c_arr();
 	}
 
+	// Connect Properties
+
+	if (opts_.MQTTVersion >= MQTTVERSION_5)
+		opts_.connectProperties = const_cast<MQTTProperties*>(&props_.c_struct());
+
 	// HTTP & Proxy
 
 	opts_.httpProxy = c_str(httpProxy_);
@@ -141,6 +171,9 @@ void connect_options::update_c_struct()
 
 connect_options& connect_options::operator=(const connect_options& opt)
 {
+	if (&opt == this)
+		return *this;
+
 	opts_ = opt.opts_;
 
 	if (opts_.will)
@@ -166,6 +199,9 @@ connect_options& connect_options::operator=(const connect_options& opt)
 
 connect_options& connect_options::operator=(connect_options&& opt)
 {
+	if (&opt == this)
+		return *this;
+
 	opts_ = opt.opts_;
 
 	if (opts_.will)
@@ -237,6 +273,20 @@ void connect_options::set_ssl(ssl_options&& ssl)
 	opts_.ssl = &ssl_.opts_;
 }
 
+// Clean sessions only apply to MQTT v3, so force it there if set.
+void connect_options::set_clean_session(bool clean)
+{
+	if (opts_.MQTTVersion < MQTTVERSION_5)
+		opts_.cleansession = to_int(clean);
+}
+
+// Clean start only apply to MQTT v5, so force it there if set.
+void connect_options::set_clean_start(bool cleanStart)
+{
+	if (opts_.MQTTVersion >= MQTTVERSION_5)
+		opts_.cleanstart = to_int(cleanStart);
+}
+
 void connect_options::set_token(const token_ptr& tok)
 {
 	tok_ = tok;
@@ -291,6 +341,20 @@ void connect_options::set_automatic_reconnect(int minRetryInterval,
 	opts_.maxRetryInterval = maxRetryInterval;
 }
 
+void connect_options::set_properties(const properties& props)
+{
+	props_ = props;
+	opts_.connectProperties = const_cast<MQTTProperties*>(&props_.c_struct());
+	opts_.MQTTVersion = MQTTVERSION_5;
+}
+
+void connect_options::set_properties(properties&& props)
+{
+	props_ = std::move(props);
+	opts_.connectProperties = const_cast<MQTTProperties*>(&props_.c_struct());
+	opts_.MQTTVersion = MQTTVERSION_5;
+}
+
 void connect_options::set_http_proxy(const string& httpProxy)
 {
 	httpProxy_ = httpProxy;
@@ -306,8 +370,8 @@ void connect_options::set_https_proxy(const string& httpsProxy)
 /////////////////////////////////////////////////////////////////////////////
 // connect_data
 
-const MQTTAsync_connectData connect_data::DFLT_C_STRUCT =
-		MQTTAsync_connectData_initializer;
+PAHO_MQTTPP_EXPORT const MQTTAsync_connectData connect_data::DFLT_C_STRUCT
+    = MQTTAsync_connectData_initializer;
 
 connect_data::connect_data() : data_(DFLT_C_STRUCT)
 {
