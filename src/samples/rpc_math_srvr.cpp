@@ -15,14 +15,14 @@
 //
 
 /*******************************************************************************
- * Copyright (c) 2019 Frank Pagliughi <fpagliughi@mindspring.com>
+ * Copyright (c) 2019-2023 Frank Pagliughi <fpagliughi@mindspring.com>
  *
  * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * are made available under the terms of the Eclipse Public License v2.0
  * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
  * The Eclipse Public License is available at
- *    http://www.eclipse.org/legal/epl-v10.html
+ *    http://www.eclipse.org/legal/epl-v20.html
  * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
@@ -43,7 +43,7 @@
 using namespace std;
 using namespace std::chrono;
 
-const string SERVER_ADDRESS	{ "tcp://localhost:1883" };
+const string SERVER_ADDRESS	{ "mqtt://localhost:1883" };
 const string CLIENT_ID		{ "rpc_math_srvr" };
 
 constexpr auto RESPONSE_TOPIC	= mqtt::property::RESPONSE_TOPIC;
@@ -95,10 +95,9 @@ int main(int argc, char* argv[])
 	mqtt::client cli(SERVER_ADDRESS, CLIENT_ID, createOpts);
 
 	auto connOpts = mqtt::connect_options_builder()
-					    .mqtt_version(MQTTVERSION_5)
-					    .keep_alive_interval(seconds(20))
-					    .clean_start(true)
-						.finalize();
+		.keep_alive_interval(seconds(20))
+		.clean_start()
+		.finalize();
 
 	const vector<string> TOPICS { "requests/math", "requests/math/#" };
 	const vector<int> QOS { 1, 1 };

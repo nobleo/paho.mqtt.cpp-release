@@ -1,14 +1,14 @@
 // async_client.cpp
 
 /*******************************************************************************
- * Copyright (c) 2013-2019 Frank Pagliughi <fpagliughi@mindspring.com>
+ * Copyright (c) 2013-2022 Frank Pagliughi <fpagliughi@mindspring.com>
  *
  * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * are made available under the terms of the Eclipse Public License v2.0
  * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
  * The Eclipse Public License is available at
- *    http://www.eclipse.org/legal/epl-v10.html
+ *    http://www.eclipse.org/legal/epl-v20.html
  * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
@@ -131,7 +131,7 @@ async_client::~async_client()
 
 
 // Callback for MQTTAsync_setConnected()
-// This is installed with the normall callbacks and with a call to 
+// This is installed with the normal callbacks and with a call to 
 // reconnect() to indicate that it succeeded. It signals the client's
 // connect token then calls any registered callbacks.
 void async_client::on_connected(void* context, char* cause)
@@ -193,6 +193,10 @@ void async_client::on_disconnected(void* context, MQTTProperties* cprops,
 			properties props(*cprops);
 			disconnectedHandler(props, ReasonCode(reasonCode));
 		}
+
+		consumer_queue_type& que = cli->que_;
+		if (que)
+			que->put(const_message_ptr{});
 	}
 }
 
@@ -211,7 +215,7 @@ int async_client::on_message_arrived(void* context, char* topicName, int topicLe
 		if (cb || que || msgHandler) {
 			size_t len = (topicLen == 0) ? strlen(topicName) : size_t(topicLen);
 
-			string topic(topicName, topicName+len);
+			string topic { topicName, len };
 			auto m = message::create(std::move(topic), *msg);
 
 			if (msgHandler)
@@ -232,32 +236,6 @@ int async_client::on_message_arrived(void* context, char* topicName, int topicLe
 	// The Java version does doesn't seem to...
 	return to_int(true);
 }
-
-// Callback to indicate that a message was delivered to the server.
-// It is called for a message with a QOS >= 1, but it happens before the
-// on_success() call for the token. Thus we don't have the underlying
-// MQTTAsync_token of the outgoing message at the time of this callback.
-//
-// *** So using the Async C library we have no way to match this msgID with
-//     a delivery_token object. So this is useless to us.
-//
-// So, all in all, this callback in it's current implementation seems rather
-// redundant.
-//
-#if 0
-void async_client::on_delivery_complete(void* context, MQTTAsync_token msgID)
-{
-	if (context) {
-		async_client* m = static_cast<async_client*>(context);
-		callback* cb = m->get_callback();
-		if (cb) {
-			delivery_token_ptr tok = m->get_pending_delivery_token(msgID);
-			cb->delivery_complete(tok);
-		}
-	}
-}
-#endif
-
 
 // Callback from the C lib for when a registered updateConnectOptions
 // needs to be called.
@@ -299,7 +277,6 @@ int async_client::on_update_connection(void* context,
 	}
 	return 0;	// false
 }
-
 
 // --------------------------------------------------------------------------
 // Private methods
@@ -437,14 +414,27 @@ void async_client::set_update_connection_handler(update_connection_handler cb)
 
 token_ptr async_client::connect()
 { 
-	return connect(connect_options());
+	return connect(connect_options{});
 }
 
 token_ptr async_client::connect(connect_options opts)
 {
-	// TODO: We really should get (or update) this value from the response
+	// TODO: We should update the MQTT version from the response
 	//  	(when the server confirms the requested version)
-	mqttVersion_ = opts.opts_.MQTTVersion;
+
+	// If the options specified a new MQTT protocol version, we should
+	// use it, otherwise default to the version requested when the client
+	// was created.
+	if (opts.opts_.MQTTVersion == 0 && mqttVersion_ >= 5)
+		opts.opts_.MQTTVersion = mqttVersion_;
+	else
+		mqttVersion_ = opts.opts_.MQTTVersion;
+
+	// The C lib is very picky about version and clean start/session
+	if (opts.opts_.MQTTVersion >= 5)
+		opts.opts_.cleansession = 0;
+	else
+		opts.opts_.cleanstart = 0;
 
 	// TODO: If connTok_ is non-null, there could be a pending connect
 	// which might complete after creating/assigning a new one. If that
@@ -457,7 +447,8 @@ token_ptr async_client::connect(connect_options opts)
 
 	opts.set_token(connTok_);
 
-	int rc = MQTTAsync_connect(cli_, &opts.opts_);
+	connOpts_ = std::move(opts);
+	int rc = MQTTAsync_connect(cli_, &connOpts_.opts_);
 
 	if (rc != MQTTASYNC_SUCCESS) {
 		remove_token(connTok_);
@@ -469,11 +460,21 @@ token_ptr async_client::connect(connect_options opts)
 }
 
 token_ptr async_client::connect(connect_options opts, void* userContext,
-										iaction_listener& cb)
+								iaction_listener& cb)
 {
-	// TODO: We really should get this value from the response (when
-	// 		the server confirms the requested version)
-	mqttVersion_ = opts.opts_.MQTTVersion;
+	// If the options specified a new MQTT protocol version, we should
+	// use it, otherwise default to the version requested when the client
+	// was created.
+	if (opts.opts_.MQTTVersion == 0 && mqttVersion_ >= 5)
+		opts.opts_.MQTTVersion = mqttVersion_;
+	else
+		mqttVersion_ = opts.opts_.MQTTVersion;
+
+	// The C lib is very picky about version and clean start/session
+	if (opts.opts_.MQTTVersion >= 5)
+		opts.opts_.cleansession = 0;
+	else
+		opts.opts_.cleanstart = 0;
 
 	auto tmpTok = connTok_;
 	connTok_ = token::create(token::Type::CONNECT, *this, userContext, cb);
@@ -481,7 +482,8 @@ token_ptr async_client::connect(connect_options opts, void* userContext,
 
 	opts.set_token(connTok_);
 
-	int rc = MQTTAsync_connect(cli_, &opts.opts_);
+	connOpts_ = std::move(opts);
+	int rc = MQTTAsync_connect(cli_, &connOpts_.opts_);
 
 	if (rc != MQTTASYNC_SUCCESS) {
 		remove_token(connTok_);
