@@ -15,14 +15,14 @@
 //
 
 /*******************************************************************************
- * Copyright (c) 2019 Frank Pagliughi <fpagliughi@mindspring.com>
+ * Copyright (c) 2019-2023 Frank Pagliughi <fpagliughi@mindspring.com>
  *
  * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * are made available under the terms of the Eclipse Public License v2.0
  * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
  * The Eclipse Public License is available at
- *    http://www.eclipse.org/legal/epl-v10.html
+ *    http://www.eclipse.org/legal/epl-v20.html
  * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
@@ -44,7 +44,7 @@
 using namespace std;
 using namespace std::chrono;
 
-const string SERVER_ADDRESS { "tcp://localhost:1883" };
+const string SERVER_ADDRESS { "mqtt://localhost:1883" };
 const auto TIMEOUT = std::chrono::seconds(10);
 
 /////////////////////////////////////////////////////////////////////////////
@@ -59,19 +59,15 @@ int main(int argc, char* argv[])
 	constexpr int QOS = 1;
 	const string REQ_TOPIC_HDR { "requests/math/" };
 
+	// Create a client using MQTT v5
 	mqtt::create_options createOpts(MQTTVERSION_5);
 	mqtt::async_client cli(SERVER_ADDRESS, "", createOpts);
-
-	auto connOpts = mqtt::connect_options_builder()
-					    .mqtt_version(MQTTVERSION_5)
-					    .clean_start()
-						.finalize();
 
 	cli.start_consuming();
 
 	try {
 		cout << "Connecting..." << flush;
-		mqtt::token_ptr tok = cli.connect(connOpts);
+		mqtt::token_ptr tok = cli.connect();	//connOpts);
 		auto connRsp = tok->get_connect_response();
 		cout << "OK (" << connRsp.get_server_uri() << ")" << endl;
 
