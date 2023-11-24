@@ -9,11 +9,11 @@
  * Copyright (c) 2017 Frank Pagliughi <fpagliughi@mindspring.com>
  *
  * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * are made available under the terms of the Eclipse Public License v2.0
  * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
  * The Eclipse Public License is available at
- *    http://www.eclipse.org/legal/epl-v10.html
+ *    http://www.eclipse.org/legal/epl-v20.html
  * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
@@ -51,7 +51,7 @@ class string_collection
 	 */
 	collection_type coll_;
 	/**
-	 * A colleciton of pointers to NUL-terminated C strings for the topics.
+	 * A collection of pointers to NUL-terminated C strings for the topics.
 	 * This is what is required by the Paho C library, and thus the lifetime
 	 * of the pointers will remain consistent with the lifetime of the
 	 * object. The value is kept consistent with the current topics and
@@ -268,7 +268,7 @@ public:
 	/** The type of the string/string pair of values */
 	using value_type = collection_type::value_type;
     /**
-     * Default construtor for an empty collection.
+     * Default constructor for an empty collection.
      */
     name_value_collection() =default;
     /**
